@@ -1,0 +1,13 @@
+[k_cluster]
+192.168.122.87 hostname=kmaster
+192.168.122.57 hostname=knode1
+192.168.122.88 hostname=knode2
+
+[k_master]
+192.168.122.87 hostname=kmaster
+
+[k_nodes]
+192.168.122.57 hostname=knode1
+192.168.122.88 hostname=knode2
+
+

@@ -1,0 +1,12 @@
+---
+#Install the ssh key in the managed hosts
+- hosts: all
+  gather_facts: False
+  remote_user: root
+
+  tasks:
+        - name: Install ssh public key
+          authorized_key:
+                user: root
+                state: present
+                key: "{{ lookup('file', '/home/tale/Ansible/ans_ssh.pub') }}"
