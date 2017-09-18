@@ -26,11 +26,11 @@
                 enabled: yes
                 state: started
           - name: Install Google Cloud SDK yum repository
-            template:
+            copy:
                 src: templates/google-cloud.repo
                 dest: /etc/yum.repos.d/
           - name: Install Kubernetes yum repository
-            template:
+            copy:
                 src: templates/kubernetes.repo
                 dest: /etc/yum.repos.d/
           - name: Install kubernetes packages
