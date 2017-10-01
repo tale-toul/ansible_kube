@@ -1,6 +1,7 @@
 ---
 #Set up a kubernetes cluster
-- hosts: k_cluster
+- hosts: cluster
+  remote_user: root
 
   tasks:
           - name: Stop firewalld
@@ -8,7 +9,6 @@
                 name: firewalld
                 enabled: no
                 state: stopped
-            #This needs a reboot afterwards
           - name: Disable SELinux
             selinux:
                 policy: targeted
@@ -44,25 +44,28 @@
                 state: started
                 
 # Set up the master node
-- hosts: k_master
+- hosts: master
+  remote_user: root
+  vars:
+        user: kubeta
 
   tasks:
-        - name: Create user kubeta
+        - name: Create user {{ user }}
           user:
-                name: kubeta
-                comment: "Kubeta"
+                name: {{ user }}
+                comment: "kubernetes user"
                 state: present
         - name: Install ssh key to kubeta
           authorized_key:
-                user: kubeta
+                user: {{ user }}
                 state: present
                 key: "{{ lookup('file', '/home/tale/Ansible/ans_ssh.pub') }}"
-        - name: Create dir ~/.kube for user kubeta
+        - name: Create dir ~/.kube for user {{ user }}
           file:
-                path: /home/kubeta/.kube
+                path: /home/{{ user }}/.kube
                 state: directory
-                owner: kubeta
-                group: kubeta
+                owner: {{ user }}
+                group: {{ user }}
                 mode: 0750
                 
                 

@@ -3,14 +3,14 @@
 #Maximum number of working nodes permited
 HIGH_LIMIT=5
 #Virtual machine template to clone
-VMTEMPLATE="stratum"
+VMTEMPLATE=""
 #Name prefix for the nodes
 PREFIX="K"
 #Read the command line options
-# -i <ssh key to connect to VMs>
 # -n <number of nodes>
 # -p <prefix to names>
-while getopts :n:p: opt; do
+# -t <VM template>
+while getopts :n:p:t: opt; do
 	case $opt in 
 	n)
 		if [ -n "$WORK_NODES" ]; then
@@ -38,6 +38,18 @@ while getopts :n:p: opt; do
 			exit 3
 		fi
 		;;
+	t)
+		if [ -n "$VMTEMPLATE" ]; then
+			echo "repeated option -$opt" >&2
+			exit 3
+		fi
+		VMTEMPLATE=$OPTARG
+		if ! [[ $PREFIX =~ ^[a-zA-Z]+$ ]]; then
+			echo "-p needs a character's string" >&2
+			exit 3
+		fi
+		;;
+
 	\?)
 		echo "Invalid option -$OPTARG" >&2
 		;;
@@ -46,13 +58,12 @@ while getopts :n:p: opt; do
 		;;
 	esac
 done
-
-if [ -n "$PREFIX" -a -n "$WORK_NODES" ]; then
+if [ -n "$PREFIX" -a -n "$WORK_NODES" -a -n "$VMTEMPLATE" ]; then
 	echo "Creating VMs"
 	virt-clone --original $VMTEMPLATE --auto-clone --name ${PREFIX}master || exit 4
 	virsh start ${PREFIX}master || exit 4
 else
-	echo "Usage $0 -n <number of working nodes> -p <Node name prefix>" >&2
+	echo "Usage $0 -n <number of working nodes> -p <Node name prefix> -t <VM template>" >&2
 	exit 4
 fi
 
@@ -92,19 +103,13 @@ while [ $WORK_NODES -ge $PROCESS_NODE ]; do
     ((PROCESS_NODE++))
 done
 echo "Saving the IPs in the inventory file"
-ALL_NODES="[${PREFIX}_cluster]\n$KMASTER_IP hostname=${PREFIX}master\n"
-#echo "[${PREFIX}_cluster]" >> ./inventory
-MASTER_NODE="[${PREFIX}_master]\n$KMASTER_IP hostname=${PREFIX}master\n"
-#echo "$KMASTER_IP hostname=${PREFIX}master" >> ./inventory
+ALL_NODES="[cluster]\n$KMASTER_IP hostname=${PREFIX}master\n"
+MASTER_NODE="[master]\n$KMASTER_IP hostname=${PREFIX}master\n"
 NODE_NUMBER=1
-NODE_NODES="[${PREFIX}_nodes]\n"
+NODE_NODES="[nodes]\n"
 for NIP in $KNODE_IPS; do
 	ALL_NODES="${ALL_NODES}$NIP hostname=${PREFIX}node${NODE_NUMBER}\n"
 	NODE_NODES="${NODE_NODES}$NIP hostname=${PREFIX}node${NODE_NUMBER}\n"
-	#echo "$NIP hostname=${PREFIX}node${NODE_NUMBER}" >> ./inventory
 	((NODE_NUMBER++))
 done
 echo -e "${ALL_NODES}\n${MASTER_NODE}\n${NODE_NODES}\n" >> ./inventory
-#echo "" >> ./inventory
-
-
