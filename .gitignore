@@ -1,0 +1,5 @@
+.*.swp
+ans_ssh
+ans_ssh.pub
+inventory
+*.retry

@@ -3,6 +3,9 @@
 - hosts: cluster
   remote_user: root
 
+  vars:
+        kubernetes_version: 1.7.5
+
   tasks:
           - name: Stop firewalld
             service: 
@@ -25,24 +28,24 @@
                 name: docker
                 enabled: yes
                 state: started
-          - name: Install Google Cloud SDK yum repository
+          - name: Add Google Cloud SDK yum repository
             copy:
                 src: templates/google-cloud.repo
                 dest: /etc/yum.repos.d/
-          - name: Install Kubernetes yum repository
+          - name: Add Kubernetes yum repository
             copy:
                 src: templates/kubernetes.repo
                 dest: /etc/yum.repos.d/
-          - name: Install kubernetes packages
+          - name: Install kubernetes packages from version {{ kubernetes_version }}
             yum:
-                name: kubectl, kubelet, kubeadm
+                name: kubectl-{{ kubernetes_version }}, kubelet-{{ kubernetes_version }}, kubeadm-{{ kubernetes_version }}
                 state: present
           - name: Enable and start kubelet
             service: 
                 name: kubelet
                 enabled: yes
                 state: started
-                
+
 # Set up the master node
 - hosts: master
   remote_user: root
@@ -50,22 +53,38 @@
         user: kubeta
 
   tasks:
+        - name: Check for kubernetes admin.conf file
+          stat:
+            path: /etc/kubernetes/admin.conf
+          register: admin_conf_file
+        - name: Check for /var/lib/kubelet
+          stat:
+            path: /var/lib/kubelet
+          register: var_lib_kubelet
+        - name: Initialize the kubernetes master
+          command: kubeadm init --pod-network-cidr=10.244.0.0/16
+          register: kubadm_reg
+          when: (admin_conf_file.stat.exists == False) and 
+                (var_lib_kubelet.stat.exists == False)
+        - name: Display messages from kubeadm
+          debug:
+                var: kubadm_reg
         - name: Create user {{ user }}
           user:
-                name: {{ user }}
+                name: "{{ user }}"
                 comment: "kubernetes user"
                 state: present
         - name: Install ssh key to kubeta
           authorized_key:
-                user: {{ user }}
+                user: "{{ user }}"
                 state: present
                 key: "{{ lookup('file', '/home/tale/Ansible/ans_ssh.pub') }}"
         - name: Create dir ~/.kube for user {{ user }}
           file:
                 path: /home/{{ user }}/.kube
                 state: directory
-                owner: {{ user }}
-                group: {{ user }}
+                owner: "{{ user }}"
+                group: "{{ user }}"
                 mode: 0750
                 
                 
