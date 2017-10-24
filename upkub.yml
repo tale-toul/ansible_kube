@@ -51,7 +51,7 @@
   remote_user: root
   vars:
         user: kubeta
-
+        flannel: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
   tasks:
         - name: Check for kubernetes admin.conf file
           stat:
@@ -78,7 +78,7 @@
           authorized_key:
                 user: "{{ user }}"
                 state: present
-                key: "{{ lookup('file', '/home/tale/Ansible/ans_ssh.pub') }}"
+                key: "{{ lookup('file', './ans_ssh.pub') }}"
         - name: Create dir ~/.kube for user {{ user }}
           file:
                 path: /home/{{ user }}/.kube
@@ -86,5 +86,25 @@
                 owner: "{{ user }}"
                 group: "{{ user }}"
                 mode: 0750
-                
-                
+        - name: Copy config file for user {{ user }}
+          copy:
+                src: /etc/kubernetes/admin.conf
+                dest: /home/{{ user }}/.kube/config
+                owner: "{{ user }}"
+                group: "{{ user }}"
+                remote_src: yes
+                mode: 0600
+
+#Install flannel
+- hosts: master
+  remote_user: kubeta
+  vars:
+        flannel: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  tasks:
+
+        - name: Install flannel network plugin
+          shell: kubectl apply -f {{ flannel }}
+          args:
+            creates: /tmp/flannel.installed
+
+

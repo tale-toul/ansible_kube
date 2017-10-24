@@ -1,0 +1,10 @@
+---
+#Join the nodes
+- hosts: nodes
+  remote_user: root
+
+  tasks:
+        - name: Join nodes
+          shell: kubeadm join --token {{ join_token }} {{ groups['master'][0] }}:6443
+          args:
+            creates: /tmp/joined_kubernetes

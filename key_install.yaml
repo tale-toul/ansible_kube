@@ -9,4 +9,4 @@
           authorized_key:
                 user: root
                 state: present
-                key: "{{ lookup('file', '/home/tale/Ansible/ans_ssh.pub') }}"
+                key: "{{ lookup('file', './ans_ssh.pub') }}"
